@@ -1,0 +1,2298 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>TonCore Wallet</title>
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:#0f1924;
+      --line: rgba(255,255,255,.08);
+
+      --text:#e9f1ff;
+      --muted: rgba(233,241,255,.58);
+
+      --blue:#4aa3ff;
+      --green:#35d29a;
+      --red:#ff5c6b;
+      --orange:#ffa500;
+      --yellow:#ffd700;
+
+      --r24:24px;
+      --r20:20px;
+      --r16:16px;
+      --r14:14px;
+
+      --tap: 52px;
+
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+      --glass: rgba(255,255,255,.03);
+      --glass2: rgba(255,255,255,.02);
+      --glow: 0 0 0 1px rgba(255,255,255,.06), 0 18px 60px rgba(0,0,0,.45);
+
+      /* bottom nav */
+      --navH: 72px;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color: var(--text);
+      background:
+        radial-gradient(900px 600px at 15% -10%, rgba(74,163,255,.18), transparent 60%),
+        radial-gradient(800px 520px at 90% 0%, rgba(53,210,154,.12), transparent 55%),
+        radial-gradient(1200px 900px at 50% 130%, rgba(53,210,154,.12), rgba(74,163,255,.08) 45%, transparent 72%),
+        radial-gradient(900px 700px at 50% 145%, rgba(255,92,107,.08), transparent 70%),
+        linear-gradient(180deg, rgba(74,163,255,.03) 0%, rgba(11,18,32,0) 55%, rgba(53,210,154,.05) 100%),
+        var(--bg);
+      -webkit-text-size-adjust: 100%;
+      text-rendering: optimizeLegibility;
+    }
+
+    /* Плавный переход в конце страницы */
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: calc(var(--navH) + 80px); /* чтобы не спорил с bottom nav */
+      background: linear-gradient(to top, var(--bg) 0%, rgba(11, 18, 32, 0) 100%);
+      pointer-events: none;
+      z-index: 10; /* было 1000 — могло мешать фикс меню */
+    }
+
+    .app{
+      min-height: 100vh;
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 14px 14px calc(var(--navH) + 18px + env(safe-area-inset-bottom));
+      position: relative;
+      z-index: 1;
+    }
+
+    .header{
+      padding: 10px 2px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      min-width:0;
+    }
+    .brand .logo{
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      margin-bottom:10px;
+      background:transparent;
+      display:grid;
+      place-items:center;
+      color: rgba(233,241,255,.92);
+      font-weight: 1000;
+      letter-spacing:.2px;
+      flex:0 0 auto;
+    }
+
+    .logo img{
+      width: 130%;
+      height: 130%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .header .title{
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing:.2px;
+      opacity:.95;
+      margin:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .header .sub{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 3px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .balance{
+      padding: 10px 0 14px;
+      text-align:center;
+      margin-bottom: 10px;
+    }
+
+    .balanceCard{
+      border-radius: var(--r24);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.018));
+      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: var(--shadow);
+      padding: 16px 14px;
+    }
+
+    .balance .amount{
+      display:inline-flex;
+      align-items:baseline;
+      gap: 8px;
+      font-weight: 1000;
+      letter-spacing: .2px;
+      line-height: 1;
+      margin-top: 4px;
+    }
+    .balance .amount .cur{ font-size: 18px; opacity:.85; }
+    .balance .amount .num{ font-size: 40px; }
+    .balance .label{
+      margin-top: 8px;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    .actions{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:14px;
+      padding:10px 0 16px;
+      text-align:center;
+    }
+    .action{
+      width: 100%;
+      text-align:center;
+      color: var(--text);
+      text-decoration:none;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      cursor:pointer;
+    }
+    .action .circle{
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border: 1px solid rgba(255,255,255,.10);
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+      display:grid;
+      place-items:center;
+      margin: 0 auto 9px;
+      color: #cfe4ff;
+    }
+    .action span{
+      display:block;
+      font-size: 13px;
+      color: rgba(233,241,255,.86);
+      font-weight: 800;
+      letter-spacing:.15px;
+    }
+    .action:active .circle{ transform: scale(.98); }
+
+    .promo{
+      margin: 8px 0 16px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.018));
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: var(--r24);
+      padding: 13px 13px;
+      display:flex;
+      align-items:center;
+      gap: 12px;
+      cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: var(--shadow);
+    }
+    .promo:active{ transform: scale(.995); }
+
+    .promo .badge{
+      width: 46px; height: 46px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.08);
+      display:grid;
+      place-items:center;
+      flex: 0 0 auto;
+      overflow:hidden;
+      font-size: 20px;
+    }
+
+    .promo .txt{ min-width:0; }
+    .promo .txt .h{
+      font-size: 14px;
+      font-weight: 950;
+      letter-spacing:.2px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .promo .txt .p{
+      margin-top: 5px;
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.25;
+      display:-webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow:hidden;
+    }
+    .promo .go{
+      margin-left:auto;
+      width: 40px; height: 40px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.02);
+      display:grid;
+      place-items:center;
+      color: rgba(233,241,255,.86);
+      pointer-events:none;
+    }
+
+    .sec{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 6px 2px 10px;
+    }
+    .sec h2{
+      margin:0;
+      font-size: 14px;
+      font-weight: 1000;
+      letter-spacing:.2px;
+      color: rgba(233,241,255,.90);
+    }
+
+    .list{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: var(--r24);
+      overflow:hidden;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 14px 12px;
+      min-height: var(--tap);
+    }
+    .row + .row{ border-top: 1px solid rgba(255,255,255,.06); }
+
+    .coinwrap{
+      display:flex;
+      align-items:center;
+      gap: 12px;
+      min-width:0;
+    }
+
+    .coin{
+      width: 46px; height: 46px;
+      border-radius: 40pt;
+      background: transparent;
+      display:grid;
+      place-items:center;
+      flex: 0 0 auto;
+      overflow:hidden;
+      position: relative;
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+    }
+    .coin img{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display:block;
+    }
+    .coin .ph{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      font-weight: 1000;
+      font-size: 13px;
+      color: rgba(233,241,255,.88);
+      background:#0d1620;
+    }
+    .coin.has-img .ph{ display:none; }
+
+    .meta{ min-width:0; }
+    .meta .name{
+      font-size: 14px;
+      font-weight: 1000;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .meta .sub{
+      margin-top: 5px;
+      font-size: 12.5px;
+      color: var(--muted);
+      display:flex;
+      gap: 8px;
+      align-items:center;
+      white-space:nowrap;
+    }
+    .chg.pos{ color: var(--green); }
+    .chg.neg{ color: var(--red); }
+
+    .val{
+      text-align:right;
+      min-width: 118px;
+    }
+    .val .top{
+      font-size: 14px;
+      font-weight: 1000;
+      white-space:nowrap;
+    }
+    .val .bot{
+      margin-top: 5px;
+      font-size: 12.5px;
+      color: var(--muted);
+      white-space:nowrap;
+    }
+
+    .qr-warning{
+      margin: 10px 0 12px;
+      padding: 10px 12px;
+      text-align: center;
+      font-size: 12.5px;
+      line-height: 1.35;
+      color: rgba(233,241,255,.9);
+      background: rgba(255,165,0,0.10);
+      border: 1px solid rgba(255,165,0,0.28);
+      border-radius: 14px;
+      box-shadow: 0 14px 30px rgba(0,0,0,.25);
+    }
+    .qr-warning b{
+      color: var(--orange);
+    }
+
+    .modal{
+      position: fixed;
+      inset: 0;
+      display: none;
+      z-index: 9999;
+    }
+    .modal.is-open{ display:block; }
+
+    .modal__overlay{
+      position:absolute;
+      inset:0;
+      background: rgba(0,0,0,.66);
+      backdrop-filter: blur(6px);
+    }
+
+    .modal__card{
+      position:absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(440px, calc(100% - 28px));
+      max-height: 90vh;
+      overflow-y: auto;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.018));
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: var(--r24);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+    }
+
+    .modal__head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .modal__title{
+      font-size: 15px;
+      font-weight: 1000;
+      letter-spacing:.2px;
+      margin:0;
+    }
+
+    .modal__close{
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.02);
+      color: var(--text);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      font-size: 18px;
+      line-height: 1;
+    }
+    .modal__close:active{ transform: scale(.98); }
+
+    .modal__body{
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .modal__big{
+      margin: 12px 0 10px;
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.02);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      box-shadow: 0 16px 40px rgba(0,0,0,.28);
+    }
+
+    .modal__big .left{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .modal__gift{
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.02);
+      display:grid;
+      place-items:center;
+      flex: 0 0 auto;
+      font-size: 20px;
+      overflow:hidden;
+    }
+
+    .modal__big .label{
+      min-width:0;
+    }
+    .modal__big .label b{
+      display:block;
+      font-size: 14px;
+      color: var(--text);
+      margin-bottom: 2px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-weight: 1000;
+    }
+    .modal__big .label span{
+      display:block;
+      font-size: 12.5px;
+      color: var(--muted);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .modal__amount{
+      font-size: 17px;
+      font-weight: 1000;
+      color: var(--green);
+      white-space:nowrap;
+    }
+
+    .modal__actions{
+      display:flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .btn{
+      flex: 1 1 auto;
+      height: 48px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.02);
+      color: var(--text);
+      font-weight: 1000;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      font-size: 14px;
+      letter-spacing:.2px;
+      box-shadow: 0 14px 30px rgba(0,0,0,.28);
+    }
+    .btn:active{ transform: scale(.99); }
+
+    .btn.primary{
+      background: linear-gradient(180deg, rgba(74,163,255,.22), rgba(74,163,255,.12));
+      border-color: rgba(74,163,255,.38);
+      color: #d7ebff;
+    }
+
+    .btn.disabled{
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .input-group{
+      margin: 16px 0;
+    }
+    .input-label{
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .input-wrapper{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: transparent;
+      border: none;
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: transparent;
+    }
+    .input-amount{
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 1000;
+      outline: none;
+      min-width: 0;
+    }
+    .input-amount::placeholder{
+      color: rgba(233,241,255,.35);
+      font-weight: 800;
+    }
+    .coin-selector{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: rgba(255,255,255,.03);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      cursor: pointer;
+      user-select: none;
+    }
+    .coin-selector:active{
+      transform: scale(0.98);
+    }
+    .coin-selector-img{
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .coin-selector-symbol{
+      font-size: 14px;
+      font-weight: 1000;
+    }
+
+    .coins-list{
+      max-height: 300px;
+      overflow-y: auto;
+      margin: 12px 0;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.02);
+      box-shadow: 0 16px 40px rgba(0,0,0,.22);
+    }
+    .coin-option{
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 12px;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .coin-option:last-child{
+      border-bottom: none;
+    }
+    .coin-option:active{
+      background: rgba(255,255,255,0.03);
+    }
+    .coin-option-img{
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 14px 30px rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .coin-option-info{
+      flex: 1;
+      min-width: 0;
+    }
+    .coin-option-name{
+      font-size: 14px;
+      font-weight: 1000;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: rgba(233,241,255,.92);
+    }
+    .coin-option-balance{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .network-selector{
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,.02);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 14px;
+      cursor: pointer;
+      user-select: none;
+      margin-bottom: 12px;
+      box-shadow: 0 16px 40px rgba(0,0,0,.22);
+    }
+    .network-selector:active{
+      transform: scale(0.99);
+    }
+    .network-info{
+      flex: 1;
+      min-width: 0;
+    }
+    .network-name{
+      font-size: 14px;
+      font-weight: 1000;
+      color: rgba(233,241,255,.92);
+    }
+    .network-fee{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .network-icon{
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid rgba(255,255,255,.10);
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      box-shadow: 0 14px 30px rgba(0,0,0,.22);
+    }
+
+    /* Блок для ошибок - универсальный */
+    .error-info {
+      padding: 12px;
+      background: rgba(255, 92, 107, 0.10);
+      border: 1px solid rgba(255, 92, 107, 0.22);
+      border-radius: 16px;
+      margin: 12px 0;
+      font-size: 13px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.22);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .error-info.is-hidden {
+      display: none !important;
+    }
+    .error-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--red);
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .error-text {
+      flex: 1;
+      color: rgba(233,241,255,.92);
+      line-height: 1.4;
+    }
+    .error-title {
+      font-weight: 800;
+      margin-bottom: 4px;
+      color: var(--red);
+    }
+
+    .fee-info{
+      padding: 12px;
+      background: rgba(255, 92, 107, 0.10);
+      border: 1px solid rgba(255, 92, 107, 0.22);
+      border-radius: 16px;
+      margin: 12px 0;
+      font-size: 13px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.22);
+    }
+    .fee-info.green{
+      background: rgba(53, 210, 154, 0.08);
+      border: 1px solid rgba(53, 210, 154, 0.20);
+    }
+    .fee-info.is-hidden{ display:none; }
+
+    .fee-label{
+      display: block;
+      color: rgba(233,241,255,.72);
+      font-size: 12px;
+      margin-bottom: 4px;
+      font-weight: 800;
+      letter-spacing:.15px;
+    }
+    .fee-amount{
+      display: block;
+      font-size: 14px;
+      font-weight: 1000;
+      color: var(--red);
+    }
+    .fee-amount.green{
+      color: var(--green);
+    }
+
+    .qr-container{
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      margin: 16px 0;
+    }
+    .qr-code{
+      width: 200px;
+      height: 200px;
+      background: white;
+      border-radius: 14px;
+      padding: 10px;
+      margin-bottom: 16px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.35);
+      overflow: hidden;
+    }
+    .qr-code img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    .qr-address{
+      font-size: 12px;
+      color: var(--muted);
+      word-break: break-all;
+      text-align: center;
+      background: rgba(255,255,255,.02);
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      margin-top: 12px;
+      box-shadow: 0 16px 40px rgba(0,0,0,.22);
+    }
+
+    .swap-container{
+      margin: 16px 0;
+    }
+    .swap-row{
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,.02);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 16px 40px rgba(0,0,0,.22);
+    }
+    .swap-input{
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 1000;
+      outline: none;
+      min-width: 0;
+    }
+    .swap-coin{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: rgba(255,255,255,.03);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.10);
+      cursor: pointer;
+    }
+    .swap-icon{
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .swap-symbol{
+      font-size: 14px;
+      font-weight: 1000;
+    }
+    .swap-arrow{
+      display: grid;
+      place-items: center;
+      margin: 8px auto;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.02);
+      border: 1px solid rgba(255,255,255,.10);
+      color: var(--blue);
+      box-shadow: 0 16px 40px rgba(0,0,0,.22);
+    }
+
+    /* =========================
+       NEWS SECTION
+       ========================= */
+    .news{
+      margin-top: 16px;
+      margin-bottom: 6px;
+    }
+    .news .sec{
+      padding-top: 10px;
+    }
+    .news-list{
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: var(--r24);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .news-item{
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .news-item + .news-item{
+      border-top: 1px solid rgba(255,255,255,.06);
+    }
+    .news-thumb{
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      overflow: hidden;
+      flex: 0 0 auto;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.02);
+      box-shadow: 0 14px 30px rgba(0,0,0,.25);
+      display:block;
+    }
+    .news-thumb img{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .news-meta{
+      min-width: 0;
+      flex: 1;
+    }
+    .news-title{
+      font-size: 13.5px;
+      font-weight: 1000;
+      color: rgba(233,241,255,.92);
+      line-height: 1.15;
+      margin-bottom: 6px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .news-sub{
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .news-dot{
+      width: 4px; height: 4px;
+      border-radius: 99px;
+      background: rgba(233,241,255,.20);
+    }
+
+    /* =========================
+       BOTTOM NAV (ONLY 2 BUTTONS)
+       ========================= */
+    .bottom-nav{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 0;
+      width: min(520px, 100%);
+      padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+      z-index: 20000;
+      pointer-events: none;
+    }
+    .bottom-nav__panel{
+      pointer-events: auto;
+      height: var(--navH);
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.018));
+      border: 1px solid rgba(255,255,255,.10);
+      box-shadow: var(--glow);
+      backdrop-filter: blur(14px);
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      align-items: center;
+      gap: 6px;
+      padding: 8px;
+    }
+    .nav-item{
+      height: calc(var(--navH) - 16px);
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      gap: 4px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      color: rgba(233,241,255,.88);
+    }
+    .nav-item:active{ transform: scale(.99); }
+    .nav-item__icon{
+      width: 36px;
+      height: 36px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.02);
+      border: 1px solid rgba(255,255,255,.10);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 14px 30px rgba(0,0,0,.25);
+      color: #cfe4ff;
+    }
+    .nav-item__label{
+      font-size: 11.5px;
+      font-weight: 900;
+      letter-spacing: .15px;
+      color: rgba(233,241,255,.72);
+      line-height: 1;
+    }
+    .nav-item.is-active{
+      background: rgba(74,163,255,.08);
+      border: 1px solid rgba(74,163,255,.22);
+    }
+    .nav-item.is-active .nav-item__label{
+      color: rgba(233,241,255,.92);
+    }
+    .nav-item.is-active .nav-item__icon{
+      background: linear-gradient(180deg, rgba(74,163,255,.18), rgba(74,163,255,.08));
+      border-color: rgba(74,163,255,.26);
+    }
+
+    @media (max-width: 380px){
+      .balance .amount .num{ font-size: 36px; }
+      .actions{ gap: 12px; }
+      .action .circle{ width: 54px; height: 54px; }
+      .val{ min-width: 104px; }
+      .row{ padding: 13px 12px; }
+      .modal__card{ width: calc(100% - 20px); }
+    }
+    @media (max-width: 340px){
+      .balance .amount .num{ font-size: 34px; }
+      .val{ min-width: 96px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="brand">
+        <div class="logo"><img src="photo/logo-wallet.png" alt="logo-wallet"></div>
+        <div style="min-width:0">
+          <p class="title">TonCore Wallet</p>
+          <div class="sub">TON Network</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="balance">
+      <div class="balanceCard">
+        <div class="amount">
+          <span class="cur">$</span>
+          <span class="num" id="totalUsd">0.00</span>
+        </div>
+        <div class="label">Общий баланс в USD</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <div class="action" role="button" tabindex="0" id="depositBtn">
+        <div class="circle" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M12 5v14m0 0-6-6m6 6 6-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span>Пополнить</span>
+      </div>
+
+      <div class="action" role="button" tabindex="0" id="withdrawBtn">
+        <div class="circle" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M12 19V5m0 0 6 6m-6-6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span>Вывести</span>
+      </div>
+
+      <div class="action" role="button" tabindex="0" id="swapBtn">
+        <div class="circle" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M7 7h11l-2-2m2 2-2 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M17 17H6l2 2m-2-2 2-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span>Обмен</span>
+      </div>
+    </div>
+
+    <div class="promo" id="promoDrop" role="button" tabindex="0" aria-label="Открыть дроп">
+      <div class="badge" aria-hidden="true">
+        <img src="photo/gift.png" alt="gift-logo" style="width:100%;height:100%;object-fit:cover;display:block;">
+      </div>
+      <div class="txt">
+        <div class="h">Получай дроп до 30 USDT!</div>
+        <div class="p">Нажми сюда, чтобы получить приветственный дроп.</div>
+      </div>
+      <div class="go" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M10 7l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h2>Активы</h2>
+    </div>
+
+    <div class="list">
+      <div class="row" data-symbol="ton" data-coingecko="the-open-network">
+        <div class="coinwrap">
+          <div class="coin" title="TON">
+            <img src="photo/toncoin-logo.png" alt="TON">
+            <div class="ph">TON</div>
+          </div>
+          <div class="meta">
+            <div class="name">Toncoin</div>
+            <div class="sub">
+              <span class="price" data-price>$0.00</span>
+              <span class="chg pos" data-chg>0.00%</span>
+            </div>
+          </div>
+        </div>
+        <div class="val">
+          <div class="top" data-amount>0.0000 TON</div>
+          <div class="bot" data-usd>≈ $0.00</div>
+        </div>
+      </div>
+
+      <div class="row" data-symbol="usdt" data-coingecko="tether">
+        <div class="coinwrap">
+          <div class="coin" title="USDT">
+            <img src="photo/usdt-logo.png" alt="USDT">
+            <div class="ph">USDT</div>
+          </div>
+          <div class="meta">
+            <div class="name">Tether</div>
+            <div class="sub">
+              <span class="price" data-price>$1.00</span>
+              <span class="chg pos" data-chg>0.00%</span>
+            </div>
+          </div>
+        </div>
+        <div class="val">
+          <div class="top" id="usdtAmount" data-amount>0.000000 USDT</div>
+          <div class="bot" id="usdtUsd" data-usd>≈ $0.00</div>
+        </div>
+      </div>
+
+      <div class="row" data-symbol="gram" data-coingecko="gram">
+        <div class="coinwrap">
+          <div class="coin" title="GRAM">
+            <img src="photo/gram-logo.png" alt="GRAM">
+            <div class="ph">GRAM</div>
+          </div>
+          <div class="meta">
+            <div class="name">GRAM</div>
+            <div class="sub">
+              <span class="price" data-price>Token</span>
+              <span class="chg pos" data-chg>0.00%</span>
+            </div>
+          </div>
+        </div>
+        <div class="val">
+          <div class="top" data-amount>0.0000 GRAM</div>
+          <div class="bot" data-usd>≈ $0.00</div>
+        </div>
+      </div>
+
+      <div class="row" data-symbol="not" data-coingecko="notcoin">
+        <div class="coinwrap">
+          <div class="coin" title="NOT">
+            <img src="photo/notcoin-logo.png" alt="NOT">
+            <div class="ph">NOT</div>
+          </div>
+          <div class="meta">
+            <div class="name">Notcoin</div>
+            <div class="sub">
+              <span class="price" data-price>Token</span>
+              <span class="chg pos" data-chg>0.00%</span>
+            </div>
+          </div>
+        </div>
+        <div class="val">
+          <div class="top" data-amount>0.0000 NOT</div>
+          <div class="bot" data-usd>≈ $0.00</div>
+        </div>
+      </div>
+
+      <div class="row" data-symbol="dogs" data-coingecko="dogs">
+        <div class="coinwrap">
+          <div class="coin" title="DOGS">
+            <img src="photo/dogs-logo.png" alt="DOGS">
+            <div class="ph">DOGS</div>
+          </div>
+          <div class="meta">
+            <div class="name">DOGS</div>
+            <div class="sub">
+              <span class="price" data-price>$0.00004131</span>
+              <span class="chg pos" data-chg>+0.05%</span>
+            </div>
+          </div>
+        </div>
+        <div class="val">
+          <div class="top" data-amount>0.0000 DOGS</div>
+          <div class="bot" data-usd>≈ $0.00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =======================
+         NEWS SECTION
+         ======================= -->
+    <div class="news" id="newsSection">
+      <div class="sec">
+        <h2>Новости</h2>
+      </div>
+
+      <div class="news-list" id="newsList"></div>
+    </div>
+  </div>
+
+  <!-- =======================
+       BOTTOM NAV (ONLY 2)
+       ======================= -->
+  <div class="bottom-nav" aria-hidden="false">
+    <div class="bottom-nav__panel" role="navigation" aria-label="Нижнее меню">
+      <div class="nav-item is-active" id="navWallet" role="button" tabindex="0">
+        <div class="nav-item__icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M4 7h16v10H4V7z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M16 12h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="nav-item__label">Кошелёк</div>
+      </div>
+
+      <div class="nav-item" id="navNews" role="button" tabindex="0">
+        <div class="nav-item__icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M6 7h10M6 11h10M6 15h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M4 5h16v14H4V5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="nav-item__label">Новости</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="dropModal" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+
+    <div class="modal__card" role="dialog" aria-modal="true" aria-label="Получение дропа">
+      <div class="modal__head">
+        <p class="modal__title">Новый пользователей? Получай наш приветсвенный дроп !</p>
+        <button class="modal__close" type="button" aria-label="Закрыть" data-close>✕</button>
+      </div>
+
+      <div class="modal__body" id="dropText">
+        Наш Web3 Кошелек перевалил отметку активных пользователей в 500 000! Хороший повод раздать 300 000$ не так ли?
+      </div>
+
+      <div class="modal__big">
+        <div class="left">
+          <div class="modal__gift" aria-hidden="true"><img src="photo/gift.png" alt="gift-logo" style="width:100%;height:100%;object-fit:cover;display:block;"></div>
+          <div class="label">
+            <b>Награда</b>
+            <span>Будет начислено на USDT баланс</span>
+          </div>
+        </div>
+        <div class="modal__amount" id="dropAmount">+30 USDT</div>
+      </div>
+
+      <div class="modal__actions">
+        <button class="btn primary" type="button" id="claimDropBtn">Получить</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="depositModal" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+
+    <div class="modal__card" role="dialog" aria-modal="true" aria-label="Пополнение баланса">
+      <div class="modal__head">
+        <p class="modal__title">Пополнить баланс</p>
+        <button class="modal__close" type="button" aria-label="Закрыть" data-close>✕</button>
+      </div>
+
+      <div class="modal__body">
+        <div class="input-group">
+          <label class="input-label">Выберите монету для пополнения:</label>
+          <div class="input-wrapper">
+            <div class="coin-selector" id="depositCoinSelector">
+              <img class="coin-selector-img" src="photo/toncoin-logo.png" alt="TON">
+              <span class="coin-selector-symbol">TON</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="network-selector" id="depositNetworkSelector">
+          <div class="network-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="network-info">
+            <div class="network-name">TON Network</div>
+            <div class="network-fee">Комиссия сети: 0 TON</div>
+          </div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+            <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <div class="error-info is-hidden" id="depositErrorBox">
+          <div class="error-icon">!</div>
+          <div class="error-text">
+            <div class="error-title">Ошибка пополнения</div>
+            <div id="depositErrorText">Текст ошибки</div>
+          </div>
+        </div>
+
+        <div class="qr-container">
+          <div class="qr-code" id="depositQrCode">
+            <img src="photo/qr_wallet.png" alt="QR Code для пополнения">
+          </div>
+          <div class="qr-warning">
+            Это адрес вашего кошелька. <b>Отправляйте сюда монеты только в сети TON</b>.<br>
+            Иначе вы рискуете потерять средства.
+          </div>
+          <div class="qr-address" id="depositAddress">
+            UQB3...N7FV
+          </div>
+        </div>
+
+        <div class="fee-info green">
+          <span class="fee-label">Минимальное пополнение:</span>
+          <span class="fee-amount green">1 TON</span>
+        </div>
+
+        <div class="modal__actions">
+          <button class="btn primary" type="button" id="copyAddressBtn">Копировать адрес</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="withdrawModal" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+
+    <div class="modal__card" role="dialog" aria-modal="true" aria-label="Вывод средств">
+      <div class="modal__head">
+        <p class="modal__title">Вывести средства</p>
+        <button class="modal__close" type="button" aria-label="Закрыть" data-close>✕</button>
+      </div>
+
+      <div class="modal__body">
+        <div class="input-group">
+          <label class="input-label">Выберите монету для вывода:</label>
+          <div class="input-wrapper">
+            <input type="text" class="input-amount" placeholder="0.00" id="withdrawAmount">
+            <div class="coin-selector" id="withdrawCoinSelector">
+              <img class="coin-selector-img" src="photo/toncoin-logo.png" alt="TON">
+              <span class="coin-selector-symbol">TON</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">Адрес получателя:</label>
+          <div class="input-wrapper">
+            <input type="text" class="input-amount" placeholder="Введите адрес кошелька" id="withdrawAddress">
+          </div>
+        </div>
+
+        <div class="network-selector" id="withdrawNetworkSelector">
+          <div class="network-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="network-info">
+            <div class="network-name">TON Network</div>
+            <div class="network-fee">Комиссия сети: 3 TON</div>
+          </div>
+        </div>
+
+        <div class="error-info is-hidden" id="withdrawErrorBox">
+          <div class="error-icon">!</div>
+          <div class="error-text">
+            <div class="error-title">Ошибка вывода</div>
+            <div id="withdrawErrorText">Текст ошибки</div>
+          </div>
+        </div>
+
+        <div class="modal__actions">
+          <button class="btn primary" type="button" id="confirmWithdrawBtn">Подтвердить вывод</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="swapModal" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+
+    <div class="modal__card" role="dialog" aria-modal="true" aria-label="Обмен валют">
+      <div class="modal__head">
+        <p class="modal__title">Обмен</p>
+        <button class="modal__close" type="button" aria-label="Закрыть" data-close>✕</button>
+      </div>
+
+      <div class="modal__body">
+        <div class="swap-container">
+          <div class="swap-row">
+            <input type="text" class="swap-input" placeholder="0.00" id="swapFromAmount">
+            <div class="swap-coin" id="swapFromCoin">
+              <img class="swap-icon" src="photo/toncoin-logo.png" alt="TON">
+              <span class="swap-symbol">TON</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="swap-arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M7 10l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+
+          <div class="swap-row">
+            <input type="text" class="swap-input" placeholder="0.00" id="swapToAmount" disabled>
+            <div class="swap-coin" id="swapToCoin">
+              <img class="swap-icon" src="photo/usdt-logo.png" alt="USDT">
+              <span class="swap-symbol">USDT</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="error-info is-hidden" id="swapErrorBox">
+            <div class="error-icon">!</div>
+            <div class="error-text">
+              <div class="error-title">Ошибка обмена</div>
+              <div id="swapErrorText">Текст ошибки</div>
+            </div>
+          </div>
+
+          <div class="fee-info green">
+            <span class="fee-label">Курс обмена:</span>
+            <span class="fee-amount green">—</span>
+          </div>
+        </div>
+
+        <div class="modal__actions">
+          <button class="btn primary disabled" type="button" id="confirmSwapBtn">Обменять</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="coinsModal" aria-hidden="true">
+    <div class="modal__overlay" data-close></div>
+
+    <div class="modal__card" role="dialog" aria-modal="true" aria-label="Выбор монеты">
+      <div class="modal__head">
+        <p class="modal__title">Выберите монету</p>
+        <button class="modal__close" type="button" aria-label="Закрыть" data-close>✕</button>
+      </div>
+
+      <div class="modal__body">
+        <div class="coins-list" id="coinsList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*
+      =======================
+      JS ЛОГИКА (TonCore Wallet) + NODE.JS BACKEND
+      =======================
+  
+      ЧТО ИЗМЕНИЛОСЬ ПО СРАВНЕНИЮ С ЧИСТЫМ FRONTEND:
+      1) Источник правды для балансов и дропа теперь БЭКЕНД (SQLite).
+      2) Дроп: /api/claim-drop (строго 1 раз на tg_id)
+      3) /api/me при старте: получаем balances и drop_claimed
+      4) Swap/Withdraw: выполняются через /api/swap и /api/withdraw
+      5) Если открыть НЕ из Telegram: включается demo_guest (чтобы UI вообще работал)
+  
+      ВАЖНО ПРО БЕЗОПАСНОСТЬ:
+      - В Telegram WebApp initData подписан.
+      - Сервер проверяет подпись initData (HMAC) через BOT_TOKEN.
+      - Поэтому tg_id нельзя подделать (если BOT_TOKEN задан правильно).
+    */
+  
+    // =======================
+    // HELPERS
+    // =======================
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+  
+    function toNumberSafe(x) {
+      const n = parseFloat(String(x).replace(",", "."));
+      return Number.isFinite(n) ? n : 0;
+    }
+    function formatFixed(n, digits=6) {
+      return (Math.round(n * Math.pow(10, digits)) / Math.pow(10, digits)).toFixed(digits);
+    }
+    function formatSmart(n, maxDigits = 6) {
+      const v = Number(n);
+      if (!Number.isFinite(v)) return "";
+      return v.toFixed(maxDigits).replace(/\.?0+$/,"");
+    }
+    function randomDogsChange() {
+      const min = 0.05;
+      const max = 0.10;
+      return +(Math.random() * (max - min) + min).toFixed(2);
+    }
+  
+    // =======================
+    // TELEGRAM INITDATA
+    // =======================
+    const tg = window.Telegram?.WebApp;
+    const INITDATA = tg?.initData || ""; // сервер читает из заголовка X-TG-INITDATA
+  
+    // =======================
+    // API CLIENT (NODE BACKEND)
+    // =======================
+    async function api(path, method="GET", body) {
+      const headers = { "Content-Type": "application/json" };
+      if (INITDATA) headers["X-TG-INITDATA"] = INITDATA;
+
+        const res = await fetch(path, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined
+      });
+
+  
+      // сервер отдаёт текст при ошибке, поэтому читаем аккуратно
+      const text = await res.text();
+      let json = null;
+      try { json = text ? JSON.parse(text) : null; } catch { json = null; }
+  
+      if (!res.ok) {
+        const msg =
+        (json && typeof json.message === "string" && json.message.trim())
+        ? json.message.trim()
+        : (text || "Произошла ошибка.");
+        throw new Error(msg);
+      }
+      return json;
+    }
+  
+    // =======================
+    // DATA (UI coins)
+    // =======================
+    const COINS = [
+      { symbol: "TON",  name: "Toncoin", icon: "photo/toncoin-logo.png", balance: 0.0000 },
+      { symbol: "USDT", name: "Tether",  icon: "photo/usdt-logo.png",    balance: 0.000000 },
+      { symbol: "GRAM", name: "GRAM",    icon: "photo/gram-logo.png",    balance: 0.0000 },
+      { symbol: "NOT",  name: "Notcoin", icon: "photo/notcoin-logo.png", balance: 0.0000 },
+      { symbol: "DOGS", name: "DOGS",    icon: "photo/dogs-logo.png",    balance: 0.0000 }
+    ];
+  
+    const NETWORKS = {
+      TON:  { name: "TON Network", fee: "3 TON" },
+      USDT: { name: "TON Network", fee: "3 TON" },
+      GRAM: { name: "TON Network", fee: "3 TON" },
+      NOT:  { name: "TON Network", fee: "3 TON" },
+      DOGS: { name: "TON Network", fee: "3 TON" }
+    };
+  
+    const pricesUsd = { TON: null, USDT: 1, GRAM: null, NOT: null, DOGS: 0.00004131 };
+    const chg24h    = { TON: null, USDT: 0, GRAM: null, NOT: null, DOGS: randomDogsChange() };
+  
+    function getCoinBySymbol(symbol) {
+      return COINS.find(c => c.symbol === symbol) || COINS[0];
+    }
+    function getPriceUsd(symbolUpper) {
+      if (symbolUpper === "USDT") return 1;
+      const p = pricesUsd?.[symbolUpper];
+      return (typeof p === "number" && Number.isFinite(p) && p > 0) ? p : null;
+    }
+    function computeTotalUsd() {
+      let total = 0;
+      for (const c of COINS) {
+        const p = getPriceUsd(c.symbol);
+        if (p) total += toNumberSafe(c.balance) * p;
+      }
+      return total;
+    }
+    function setRowBalance(symbolUpper, amount) {
+      const row = document.querySelector(`.row[data-symbol="${symbolUpper.toLowerCase()}"]`);
+      if (!row) return;
+  
+      const amountEl = row.querySelector("[data-amount]");
+      const usdEl = row.querySelector("[data-usd]");
+  
+      const p = getPriceUsd(symbolUpper);
+      if (amountEl) amountEl.textContent = `${formatFixed(amount, symbolUpper === "USDT" ? 6 : 4)} ${symbolUpper}`;
+  
+      const usd = p ? (amount * p) : 0;
+      if (usdEl) usdEl.textContent = `≈ $${(Math.round(usd * 100) / 100).toFixed(2)}`;
+    }
+    function renderAll() {
+      COINS.forEach(c => setRowBalance(c.symbol, toNumberSafe(c.balance)));
+  
+      const usdtEl = $("#usdtAmount");
+      const usdtUsdEl = $("#usdtUsd");
+      const usdtBal = toNumberSafe(getCoinBySymbol("USDT").balance);
+      if (usdtEl) usdtEl.textContent = `${formatFixed(usdtBal, 6)} USDT`;
+      if (usdtUsdEl) usdtUsdEl.textContent = `≈ $${(Math.round(usdtBal * 100) / 100).toFixed(2)}`;
+  
+      const total = computeTotalUsd();
+      const totalEl = $("#totalUsd");
+      if (totalEl) totalEl.textContent = (Math.round(total * 100) / 100).toFixed(2);
+    }
+  
+    // =======================
+    // MODALS (оставлено как у тебя)
+    // =======================
+    let currentMainModal = null;
+    let selectedCoinFor = null;
+    let selectedCoin = getCoinBySymbol("TON");
+    let swapFromCoin = getCoinBySymbol("TON");
+    let swapToCoin = getCoinBySymbol("USDT");
+  
+    function openModal(modalId) {
+      closeAllModals();
+      const modal = $(`#${modalId}`);
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+      if (modalId !== "coinsModal") currentMainModal = modalId;
+    }
+  
+    function closeModal(modalId) {
+      const modal = $(`#${modalId}`);
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      if (modalId === currentMainModal) currentMainModal = null;
+    }
+  
+    function closeAllModals() {
+      $$(".modal").forEach(modal => {
+        modal.classList.remove("is-open");
+        modal.setAttribute("aria-hidden", "true");
+      });
+      currentMainModal = null;
+    }
+  
+    $$("[data-close]").forEach(el => {
+      el.addEventListener("click", function() {
+        if (this.closest("#coinsModal")) {
+          closeModal("coinsModal");
+          if (currentMainModal) openModal(currentMainModal);
+        } else {
+          closeAllModals();
+        }
+      });
+    });
+  
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        if ($("#coinsModal").classList.contains("is-open")) {
+          closeModal("coinsModal");
+          if (currentMainModal) openModal(currentMainModal);
+        } else {
+          closeAllModals();
+        }
+      }
+    });
+  
+    // =======================
+    // ERRORS UI
+    // =======================
+    function hideErrorBoxes() {
+      $$(".error-info").forEach(el => el.classList.add("is-hidden"));
+    }
+  
+    function showError(modalType, title, message) {
+      const errorBox = $(`#${modalType}ErrorBox`);
+      const errorText = $(`#${modalType}ErrorText`);
+      if (errorBox && errorText) {
+        errorBox.classList.remove("is-hidden");
+        errorText.textContent = message;
+      }
+    }
+  
+    // =======================
+    // COINS MODAL (как у тебя)
+    // =======================
+    function selectCoin(coin) {
+      if (selectedCoinFor === "deposit" || selectedCoinFor === "withdraw") {
+        selectedCoin = coin;
+        if (selectedCoinFor === "deposit") updateDepositModal();
+        else updateWithdrawModal();
+      } else if (selectedCoinFor === "swapFrom") {
+        swapFromCoin = coin;
+        updateSwapModal();
+      } else if (selectedCoinFor === "swapTo") {
+        swapToCoin = coin;
+        updateSwapModal();
+      }
+    }
+  
+    function openCoinsModal() {
+      closeModal("coinsModal");
+      const coinsModal = $("#coinsModal");
+      coinsModal.classList.add("is-open");
+      coinsModal.setAttribute("aria-hidden", "false");
+  
+      const coinsList = $("#coinsList");
+      coinsList.innerHTML = "";
+  
+      COINS.forEach(coin => {
+        const coinOption = document.createElement("div");
+        coinOption.className = "coin-option";
+        coinOption.innerHTML = `
+          <img class="coin-option-img" src="${coin.icon}" alt="${coin.symbol}">
+          <div class="coin-option-info">
+            <div class="coin-option-name">${coin.name}</div>
+            <div class="coin-option-balance">Баланс: ${formatSmart(coin.balance, 6)} ${coin.symbol}</div>
+          </div>
+        `;
+        coinOption.addEventListener("click", () => {
+          selectCoin(coin);
+          closeModal("coinsModal");
+          if (currentMainModal) openModal(currentMainModal);
+        });
+        coinsList.appendChild(coinOption);
+      });
+    }
+  
+    $("#depositCoinSelector").addEventListener("click", () => { selectedCoinFor = "deposit"; openCoinsModal(); });
+    $("#withdrawCoinSelector").addEventListener("click", () => { selectedCoinFor = "withdraw"; openCoinsModal(); });
+    $("#swapFromCoin").addEventListener("click", () => { selectedCoinFor = "swapFrom"; openCoinsModal(); });
+    $("#swapToCoin").addEventListener("click", () => { selectedCoinFor = "swapTo"; openCoinsModal(); });
+  
+    // =======================
+    // UI UPDATE MODALS
+    // =======================
+    function updateDepositModal() {
+      const coinSelector = $("#depositCoinSelector");
+      const networkSelector = $("#depositNetworkSelector");
+      const qrCode = $("#depositQrCode");
+      const address = $("#depositAddress");
+  
+      coinSelector.querySelector(".coin-selector-img").src = selectedCoin.icon;
+      coinSelector.querySelector(".coin-selector-symbol").textContent = selectedCoin.symbol;
+  
+      const network = NETWORKS[selectedCoin.symbol] || NETWORKS.TON;
+      networkSelector.querySelector(".network-name").textContent = network.name;
+      networkSelector.querySelector(".network-fee").textContent = `Комиссия сети: 0 TON`;
+  
+      // Это демо адрес (как у тебя)
+      const sampleAddress = `UQDAf4jra9PBcsFqgM4jI7Kp4wHqPgUd5VTf0PX6z70PYd7y`;
+      address.textContent = sampleAddress;
+  
+      qrCode.innerHTML = `<img src="photo/qr_wallet.png" alt="QR Code для пополнения">`;
+    }
+  
+    function updateWithdrawModal() {
+      const coinSelector = $("#withdrawCoinSelector");
+      const networkSelector = $("#withdrawNetworkSelector");
+      const amountInput = $("#withdrawAmount");
+      const addressInput = $("#withdrawAddress");
+  
+      coinSelector.querySelector(".coin-selector-img").src = selectedCoin.icon;
+      coinSelector.querySelector(".coin-selector-symbol").textContent = selectedCoin.symbol;
+  
+      const network = NETWORKS[selectedCoin.symbol] || NETWORKS.TON;
+      networkSelector.querySelector(".network-name").textContent = network.name;
+      networkSelector.querySelector(".network-fee").textContent = `Комиссия сети: 3 TON`;
+  
+      amountInput.value = "";
+      addressInput.value = "";
+      hideErrorBoxes();
+    }
+  
+    function getExchangeRate(fromSymbol, toSymbol) {
+      if (fromSymbol === toSymbol) return 1;
+      const fromPrice = getPriceUsd(fromSymbol);
+      const toPrice = getPriceUsd(toSymbol);
+      if (!fromPrice || !toPrice) return 1;
+      return fromPrice / toPrice;
+    }
+  
+    function updateSwapModal() {
+      const fromCoin = $("#swapFromCoin");
+      const toCoin = $("#swapToCoin");
+      const fromAmount = $("#swapFromAmount");
+      const toAmount = $("#swapToAmount");
+      const swapBtn = $("#confirmSwapBtn");
+      const rateElement = $("#swapModal .fee-amount.green");
+  
+      fromCoin.querySelector(".swap-icon").src = swapFromCoin.icon;
+      fromCoin.querySelector(".swap-symbol").textContent = swapFromCoin.symbol;
+  
+      toCoin.querySelector(".swap-icon").src = swapToCoin.icon;
+      toCoin.querySelector(".swap-symbol").textContent = swapToCoin.symbol;
+  
+      fromAmount.value = "";
+      toAmount.value = "";
+  
+      const rate = getExchangeRate(swapFromCoin.symbol, swapToCoin.symbol);
+      if (rateElement) rateElement.textContent = `1 ${swapFromCoin.symbol} = ${formatSmart(rate, 6)} ${swapToCoin.symbol}`;
+  
+      swapBtn.dataset.can = "0";
+      swapBtn.disabled = false;
+      swapBtn.classList.add("disabled");
+  
+      hideErrorBoxes();
+    }
+  
+    // =======================
+    // BUTTONS open modals
+    // =======================
+    $("#depositBtn").addEventListener("click", () => { openModal("depositModal"); updateDepositModal(); hideErrorBoxes(); });
+    $("#withdrawBtn").addEventListener("click", () => { openModal("withdrawModal"); updateWithdrawModal(); hideErrorBoxes(); });
+    $("#swapBtn").addEventListener("click", () => { openModal("swapModal"); updateSwapModal(); hideErrorBoxes(); });
+  
+    // =======================
+    // DROP (через backend)
+    // =======================
+    const DROP_AMOUNT_USDT = 30;
+    let dropClaimedServer = false;
+  
+    function removePromoIfClaimed() {
+      const promo = $("#promoDrop");
+      if (promo) promo.remove();
+    }
+  
+    function setDropUIClaimed() {
+      $("#dropText").textContent = "Дроп уже получен. Спасибо, что с нами!";
+      $("#claimDropBtn").textContent = "Ок";
+    }
+  
+    $("#promoDrop")?.addEventListener("click", () => {
+      hideErrorBoxes();
+      $("#dropAmount").textContent = `+${DROP_AMOUNT_USDT} USDT`;
+  
+      if (dropClaimedServer) {
+        setDropUIClaimed();
+      } else {
+        $("#dropText").textContent = "Наш Web3 кошелек перевалил отметку в 500 000 пользователей. Хороший повод раздать 300 000$ не так ли?";
+        $("#claimDropBtn").textContent = "Получить";
+      }
+  
+      openModal("dropModal");
+    });
+  
+    $("#claimDropBtn").addEventListener("click", async () => {
+      // Если уже получен — просто закрываем
+      if (dropClaimedServer) {
+        closeAllModals();
+        return;
+      }
+  
+      try {
+        const r = await api("/api/claim-drop", "POST");
+        // r.claimed true/false
+        if (r.claimed) {
+          // Обновляем балансы из БД
+          applyBalancesFromServer(r.balances);
+  
+          // Удаляем баннер сразу
+          dropClaimedServer = true;
+          removePromoIfClaimed();
+  
+          // Обновляем текст модалки
+          $("#dropText").textContent = "Готово. бонус начислен на USDT баланс";
+          $("#dropAmount").textContent = `+${DROP_AMOUNT_USDT} USDT`;
+          $("#claimDropBtn").textContent = "Ок";
+        } else {
+          dropClaimedServer = true;
+          removePromoIfClaimed();
+          setDropUIClaimed();
+        }
+      } catch (e) {
+        // Если хочешь — можно вывести блок ошибки
+        $("#dropText").textContent = "Ошибка получения дропа: " + (e?.message || "unknown");
+        $("#claimDropBtn").textContent = "Ок";
+      }
+    });
+  
+    // =======================
+    // APPLY BALANCES FROM SERVER
+    // =======================
+    function applyBalancesFromServer(balances) {
+      // balances: {TON:..., USDT:...}
+      for (const c of COINS) {
+        const v = balances?.[c.symbol];
+        c.balance = Number.isFinite(Number(v)) ? Number(v) : 0;
+      }
+      renderAll();
+    }
+  
+    // =======================
+    // SWAP input (валидация UI как у тебя, но подтверждение идёт на сервер)
+    // =======================
+    $("#swapFromAmount").addEventListener("input", (e) => {
+      const fromAmount = parseFloat(e.target.value) || 0;
+      const toAmount = $("#swapToAmount");
+      const swapBtn = $("#confirmSwapBtn");
+  
+      const fee = 3;
+      const tonBal = toNumberSafe(getCoinBySymbol("TON").balance || 0);
+      const fromCoinBalance = toNumberSafe(swapFromCoin.balance || 0);
+  
+      hideErrorBoxes();
+  
+      if (fromAmount > 0) {
+        const rate = getExchangeRate(swapFromCoin.symbol, swapToCoin.symbol);
+        const result = fromAmount * rate;
+        toAmount.value = formatSmart(result, 6);
+  
+        let canSwap = true;
+        let errorMessage = "";
+  
+        if (fromAmount > fromCoinBalance) {
+          canSwap = false;
+          errorMessage = `Недостаточно ${swapFromCoin.symbol} на балансе. Доступно: ${formatSmart(fromCoinBalance, 6)} ${swapFromCoin.symbol}`;
+        } else if (swapFromCoin.symbol === "TON" && tonBal < (fromAmount + fee)) {
+          canSwap = false;
+          errorMessage = `Недостаточно TON для обмена и комиссии. Нужно: ${formatSmart(fromAmount + fee, 6)} TON, доступно: ${formatSmart(tonBal, 6)} TON`;
+        } else if (tonBal < fee) {
+          canSwap = false;
+          errorMessage = "Недостаточно TON для оплаты комиссии сети (требуется 3 TON)";
+        }
+  
+        if (canSwap) {
+          swapBtn.dataset.can = "1";
+          swapBtn.disabled = false;
+          swapBtn.classList.remove("disabled");
+        } else {
+          swapBtn.dataset.can = "0";
+          swapBtn.disabled = false;
+          swapBtn.classList.add("disabled");
+          showError("swap", "Ошибка обмена", errorMessage);
+        }
+      } else {
+        toAmount.value = "";
+        swapBtn.dataset.can = "0";
+        swapBtn.disabled = false;
+        swapBtn.classList.add("disabled");
+      }
+    });
+  
+    // =======================
+    // SWAP confirm -> backend
+    // =======================
+    $("#confirmSwapBtn").addEventListener("click", async () => {
+      hideErrorBoxes();
+  
+      const fromAmount = parseFloat($("#swapFromAmount").value) || 0;
+      const toAmount = parseFloat($("#swapToAmount").value) || 0;
+  
+      if (!fromAmount || fromAmount <= 0) {
+        showError("swap", "Ошибка обмена", "Введите сумму для обмена");
+        return;
+      }
+      if ($("#confirmSwapBtn").dataset.can === "0") {
+        showError("swap", "Ошибка обмена", "Проверьте введенные данные и доступный баланс");
+        return;
+      }
+  
+      try {
+        const r = await api("/api/swap", "POST", {
+          fromSymbol: swapFromCoin.symbol,
+          toSymbol: swapToCoin.symbol,
+          fromAmount,
+          toAmount
+        });
+  
+        applyBalancesFromServer(r.balances);
+  
+        alert(`Успешный обмен!\n${formatSmart(fromAmount, 6)} ${swapFromCoin.symbol} → ${formatSmart(toAmount, 6)} ${swapToCoin.symbol}\nКомиссия: 3 TON`);
+        closeAllModals();
+      } catch (e) {
+        showError("swap", "Ошибка обмена", e?.message || "Ошибка сервера");
+      }
+    });
+  
+    // =======================
+    // WITHDRAW confirm -> backend
+    // =======================
+    $("#confirmWithdrawBtn").addEventListener("click", async () => {
+      hideErrorBoxes();
+  
+      const amount = parseFloat($("#withdrawAmount").value) || 0;
+      const address = $("#withdrawAddress").value.trim();
+  
+      if (!amount || amount <= 0) {
+        showError("withdraw", "Ошибка вывода", "Введите сумму для вывода");
+        return;
+      }
+      if (!address) {
+        showError("withdraw", "Ошибка вывода", "Введите адрес получателя");
+        return;
+      }
+  
+      try {
+        const r = await api("/api/withdraw", "POST", {
+          symbol: selectedCoin.symbol,
+          amount,
+          address
+        });
+  
+        applyBalancesFromServer(r.balances);
+  
+        alert(`Запрос на вывод ${formatSmart(amount, 6)} ${selectedCoin.symbol} отправлен!\nКомиссия: 3 TON\nНа обработку: до 24 часов`);
+        closeAllModals();
+      } catch (e) {
+        showError("withdraw", "Ошибка вывода", e?.message || "Ошибка сервера");
+      }
+    });
+  
+    // =======================
+    // COPY ADDRESS (как у тебя)
+    // =======================
+    $("#copyAddressBtn").addEventListener("click", () => {
+      const address = $("#depositAddress").textContent;
+      navigator.clipboard.writeText(address).then(() => {
+        const btn = $("#copyAddressBtn");
+        const originalText = btn.textContent;
+        btn.textContent = "Скопировано!";
+        setTimeout(() => { btn.textContent = originalText; }, 2000);
+      }).catch(() => {
+        const tempInput = document.createElement("input");
+        tempInput.value = address;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
+  
+        const btn = $("#copyAddressBtn");
+        const originalText = btn.textContent;
+        btn.textContent = "Скопировано!";
+        setTimeout(() => { btn.textContent = originalText; }, 2000);
+      });
+    });
+  
+    // =======================
+    // ICONS FIX (как у тебя)
+    // =======================
+    function initCoinIcons() {
+      document.querySelectorAll(".coin").forEach(coin => {
+        const img = coin.querySelector("img");
+        const ph = coin.querySelector(".ph");
+        if (!img || !ph) return;
+  
+        const markLoaded = () => {
+          coin.classList.add("has-img");
+          ph.style.display = "none";
+        };
+  
+        const markError = () => {
+          img.style.display = "none";
+          coin.classList.remove("has-img");
+          ph.style.display = "grid";
+        };
+  
+        if (img.complete) {
+          if (img.naturalWidth > 0) markLoaded();
+          else markError();
+        } else {
+          img.addEventListener("load", markLoaded, { once: true });
+          img.addEventListener("error", markError, { once: true });
+        }
+      });
+    }
+  
+        // =======================
+    // PRICES (как у тебя)
+    // =======================
+    async function updatePrices() {
+      const rows = $$(".row[data-coingecko]");
+      const ids = rows.map(r => r.getAttribute("data-coingecko")).filter(Boolean);
+      const uniqIds = Array.from(new Set(ids));
+      if (!uniqIds.length) return;
+
+      // -----------------------
+      // OPTIMIZED: local cache + abort previous request
+      // -----------------------
+      const TTL_MS = 1000 * 60 * 3; // 3 минуты (можешь 2–5)
+      const now = Date.now();
+
+      // создаём поля на самой функции, чтобы ничего вокруг не трогать
+      if (!updatePrices._cache) updatePrices._cache = { ts: 0, data: null };
+      if (!updatePrices._ctrl) updatePrices._ctrl = null;
+
+      // если кэш свежий — просто применяем его
+      if (updatePrices._cache.data && (now - updatePrices._cache.ts) < TTL_MS) {
+        applyPricesPayload(updatePrices._cache.data);
+        return;
+      }
+
+      // отменяем прошлый запрос, если он ещё летит
+      try { updatePrices._ctrl?.abort?.(); } catch {}
+      updatePrices._ctrl = (typeof AbortController !== "undefined") ? new AbortController() : null;
+
+      const url =
+        `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(uniqIds.join(","))}` +
+        `&vs_currencies=usd&include_24hr_change=true`;
+
+      try {
+        const res = await fetch(url, {
+          method: "GET",
+          signal: updatePrices._ctrl ? updatePrices._ctrl.signal : undefined
+        });
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        // сохраняем кэш
+        updatePrices._cache = { ts: now, data };
+
+        applyPricesPayload(data);
+      } catch (e) {
+        // если это abort — молча
+        if (e?.name === "AbortError") return;
+      }
+
+      function applyPricesPayload(data) {
+        rows.forEach(row => {
+          const symLower = row.getAttribute("data-symbol");
+          const symbolUpper = symLower ? symLower.toUpperCase() : null;
+
+          if (symbolUpper === "DOGS") {
+            pricesUsd.DOGS = 0.00004131;
+            chg24h.DOGS = randomDogsChange();
+
+            const priceEl = row.querySelector("[data-price]");
+            const chgEl = row.querySelector("[data-chg]");
+            if (priceEl) priceEl.textContent = `$${(0.00004131).toFixed(8)}`;
+            if (chgEl) {
+              chgEl.textContent = `+${chg24h.DOGS.toFixed(2)}%`;
+              chgEl.classList.add("pos");
+              chgEl.classList.remove("neg");
+            }
+            return;
+          }
+
+          const id = row.getAttribute("data-coingecko");
+          const payload = data?.[id];
+          if (!payload) return;
+
+          const price = payload.usd;
+          const chg = payload.usd_24h_change;
+
+          if (symbolUpper && typeof price === "number" && Number.isFinite(price)) pricesUsd[symbolUpper] = price;
+          if (symbolUpper && typeof chg === "number" && Number.isFinite(chg)) chg24h[symbolUpper] = chg;
+
+          const priceEl = row.querySelector("[data-price]");
+          if (priceEl && typeof price === "number") {
+            const formatted =
+              price >= 1 ? price.toFixed(2) :
+              price >= 0.01 ? price.toFixed(4) :
+              price.toFixed(6);
+            priceEl.textContent = `$${formatted}`;
+          }
+
+          const chgEl = row.querySelector("[data-chg]");
+          if (chgEl && typeof chg === "number") {
+            const sign = chg >= 0 ? "+" : "";
+            chgEl.textContent = `${sign}${chg.toFixed(2)}%`;
+            chgEl.classList.toggle("pos", chg >= 0);
+            chgEl.classList.toggle("neg", chg < 0);
+          }
+        });
+
+        renderAll();
+        if ($("#swapModal").classList.contains("is-open")) updateSwapModal();
+      }
+    }
+
+
+    // =======================
+    // NEWS (demo) render
+    // =======================
+    const NEWS = [
+      { date: "28.12.2025", img: "photo/ton-up-news.png", title: "TON решил нас порадовать И начал расти к праздникам!", views: 12834 },
+      { date: "26.12.2025", img: "photo/gift.png", title: "Запуск раздачи 300 000$. Наш кошелек достиг количества активных пользователей в 500 тысяч!", views: 129421 },
+      { date: "09.12.2025", img: "photo/toncoin-logo.png", title: "Локальный рост TON'а на фоне новых NFT-подарков в телеграме.", views: 17602 },
+      { date: "1.12.2025", img: "photo/news-4.png", title: "На рынке наблюдается зимняя слабость! цены идут медленно но уверено вниз.", views: 37231 }
+    ];
+
+    function formatViews(n){
+      const v = Number(n) || 0;
+      if (v >= 1_000_000) return (v/1_000_000).toFixed(1).replace(/\.0$/,"") + "M";
+      if (v >= 1_000) return (v/1_000).toFixed(1).replace(/\.0$/,"") + "K";
+      return String(v);
+    }
+
+    function renderNews(){
+      const list = $("#newsList");
+      if (!list) return;
+      list.innerHTML = "";
+
+      NEWS.forEach((x, idx) => {
+      const item = document.createElement("div");
+      item.className = "news-item";
+
+      const thumb = document.createElement("div");
+      thumb.className = "news-thumb";
+
+      const img = document.createElement("img");
+      img.alt = `news-${idx+1}`;
+      img.src = String(x.img || "");
+
+      // вместо inline onerror (XSS) — безопасный обработчик
+      img.onerror = () => {
+        try { img.remove(); } catch {}
+        thumb.style.display = "grid";
+        thumb.style.placeItems = "center";
+        thumb.style.color = "rgba(233,241,255,.65)";
+        thumb.textContent = "NEWS";
+      };
+
+      thumb.appendChild(img);
+
+      const meta = document.createElement("div");
+      meta.className = "news-meta";
+
+      const title = document.createElement("div");
+      title.className = "news-title";
+      title.textContent = String(x.title || ""); // важно: textContent, не innerHTML
+
+      const sub = document.createElement("div");
+      sub.className = "news-sub";
+
+      const s1 = document.createElement("span");
+      s1.textContent = String(x.date || "");
+
+      const dot = document.createElement("span");
+      dot.className = "news-dot";
+
+      const s2 = document.createElement("span");
+      s2.textContent = `👁 ${formatViews(x.views)}`;
+
+      sub.appendChild(s1);
+      sub.appendChild(dot);
+      sub.appendChild(s2);
+
+      meta.appendChild(title);
+      meta.appendChild(sub);
+
+      item.appendChild(thumb);
+      item.appendChild(meta);
+
+      list.appendChild(item);
+    });
+  }
+
+
+    // =======================
+    // BOTTOM NAV (только кошелёк/новости)
+    // =======================
+    function setActiveNav(id){
+      ["navWallet","navNews"].forEach(k=>{
+        const el = document.getElementById(k);
+        if (!el) return;
+        el.classList.toggle("is-active", k === id);
+      });
+    }
+
+    document.getElementById("navWallet")?.addEventListener("click", () => {
+      setActiveNav("navWallet");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    document.getElementById("navNews")?.addEventListener("click", () => {
+      setActiveNav("navNews");
+      const sec = document.getElementById("newsSection");
+      if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  
+    // =======================
+    // INIT: load from backend
+    // =======================
+    async function boot() {
+      initCoinIcons();
+      renderNews();
+  
+      try {
+        const me = await api("/api/me");
+        dropClaimedServer = !!me.drop_claimed;
+        applyBalancesFromServer(me.balances);
+  
+        if (dropClaimedServer) removePromoIfClaimed();
+      } catch (e) {
+        // Если backend недоступен — просто остаёмся на нулевых балансах (UI не падает)
+        dropClaimedServer = false;
+        renderAll();
+      }
+  
+      updatePrices();
+      setInterval(updatePrices, 60_000);
+    }
+  
+    boot();
+  </script>    
+</body>
+</html>
