@@ -949,6 +949,12 @@
       padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
       z-index: 20000;
       pointer-events: none;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    .bottom-nav.hidden {
+      opacity: 0;
+      transform: translateX(-50%) translateY(20px);
+      pointer-events: none;
     }
     .bottom-nav__panel{
       pointer-events: auto;
@@ -1611,7 +1617,7 @@
     }
   
     // =======================
-    // MODALS (оставлено как у тебя)
+    // MODALS (с управлением видимостью панели навигации)
     // =======================
     let currentMainModal = null;
     let selectedCoinFor = null;
@@ -1625,6 +1631,9 @@
       modal.classList.add("is-open");
       modal.setAttribute("aria-hidden", "false");
       if (modalId !== "coinsModal") currentMainModal = modalId;
+      
+      // Скрываем нижнюю панель навигации при открытии модалки
+      hideBottomNav();
     }
   
     function closeModal(modalId) {
@@ -1632,6 +1641,11 @@
       modal.classList.remove("is-open");
       modal.setAttribute("aria-hidden", "true");
       if (modalId === currentMainModal) currentMainModal = null;
+      
+      // Если закрыли все модалки (кроме выбора монет), показываем панель
+      if (!currentMainModal && modalId !== "coinsModal") {
+        showBottomNav();
+      }
     }
   
     function closeAllModals() {
@@ -1640,6 +1654,9 @@
         modal.setAttribute("aria-hidden", "true");
       });
       currentMainModal = null;
+      
+      // Показываем нижнюю панель навигации
+      showBottomNav();
     }
   
     $$("[data-close]").forEach(el => {
@@ -1663,6 +1680,23 @@
         }
       }
     });
+  
+    // =======================
+    // Управление видимостью нижней панели навигации
+    // =======================
+    function hideBottomNav() {
+      const bottomNav = $(".bottom-nav");
+      if (bottomNav) {
+        bottomNav.classList.add("hidden");
+      }
+    }
+  
+    function showBottomNav() {
+      const bottomNav = $(".bottom-nav");
+      if (bottomNav) {
+        bottomNav.classList.remove("hidden");
+      }
+    }
   
     // =======================
     // ERRORS UI
@@ -1809,9 +1843,23 @@
     // =======================
     // BUTTONS open modals
     // =======================
-    $("#depositBtn").addEventListener("click", () => { openModal("depositModal"); updateDepositModal(); hideErrorBoxes(); });
-    $("#withdrawBtn").addEventListener("click", () => { openModal("withdrawModal"); updateWithdrawModal(); hideErrorBoxes(); });
-    $("#swapBtn").addEventListener("click", () => { openModal("swapModal"); updateSwapModal(); hideErrorBoxes(); });
+    $("#depositBtn").addEventListener("click", () => { 
+      openModal("depositModal"); 
+      updateDepositModal(); 
+      hideErrorBoxes(); 
+    });
+    
+    $("#withdrawBtn").addEventListener("click", () => { 
+      openModal("withdrawModal"); 
+      updateWithdrawModal(); 
+      hideErrorBoxes(); 
+    });
+    
+    $("#swapBtn").addEventListener("click", () => { 
+      openModal("swapModal"); 
+      updateSwapModal(); 
+      hideErrorBoxes(); 
+    });
   
     // =======================
     // DROP (через backend)
